@@ -1,0 +1,10 @@
+HardwareShader PostProcess scene
+{
+	Name "Bandither"
+	Shader "shaders/bandither.fp" 330
+	Uniform float colorlevels
+	Uniform float bandingstyle
+	Uniform int ditherstyle
+	Uniform float dithering
+	Uniform int ditheringscale
+}

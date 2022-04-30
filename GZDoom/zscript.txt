@@ -1,0 +1,26 @@
+version "4.6"
+
+class BanditherEventHandler : EventHandler
+{
+	override void UiTick()
+	{
+		PlayerInfo p = players[consoleplayer];
+		if (p)
+		{
+			bool enabled = CVar.GetCVar("gl_bandither_enabled", p).GetBool();
+			float colorlevels = CVar.GetCVar("gl_bandither_colorlevels", p).GetFloat();
+			float bandingstyle = CVar.GetCVar("gl_bandither_bandingstyle", p).GetFloat();
+			int ditherstyle = CVar.GetCVar("gl_bandither_ditherstyle", p).GetInt();
+			float dithering = CVar.GetCVar("gl_bandither_dither", p).GetFloat();
+			int ditheringscale = CVar.GetCVar("gl_bandither_ditheringscale", p).GetInt();
+			
+			Shader.SetEnabled(p, "Bandither", enabled);
+			Shader.SetUniform1f(p, "Bandither", "colorlevels", colorlevels);
+			Shader.SetUniform1f(p, "Bandither", "dithering", dithering);
+			Shader.SetUniform1f(p, "Bandither", "ditherstyle", ditherstyle);
+			Shader.SetUniform1f(p, "Bandither", "bandingstyle", bandingstyle);
+			Shader.SetUniform1f(p, "Bandither", "ditheringscale", ditheringscale);
+		}
+		super.UITick();
+	}
+}

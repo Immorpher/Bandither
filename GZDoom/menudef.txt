@@ -1,0 +1,21 @@
+// main options
+AddOptionMenu "OptionsMenu"
+{
+	StaticText	"Bandither Shader", "Gold"
+	Option		"Enabled", "gl_bandither_enabled", "OnOff"
+	Slider		"Color Levels", "gl_bandither_colorlevels", 2.0, 64.0, 1.0
+	Slider		"Banding Curve", "gl_bandither_bandingstyle", 0.1, 20.0, 0.1
+	Option		"Dither Style", "gl_bandither_ditherstyle", "DitherOpts"
+	Slider		"Dither Level", "gl_bandither_dither", 0.0, 1.0, 0.01
+	Slider		"Dither Scale", "gl_bandither_ditheringscale", 1, 32, 1
+}
+
+// sub options
+OptionValue "DitherOpts"
+{
+	0, "Bayer 2x2"
+	1, "Bayer 8x8"
+	2, "Static Noise"
+	3, "Motion Noise"
+	4, "Scanline"
+}
