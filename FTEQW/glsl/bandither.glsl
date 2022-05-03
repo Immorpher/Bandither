@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------
-// About Bandither 1.1
+// About Bandither 1.2
 
 // Bandither is a non-linear "software-like" color banding and dithering shader by Immorpher. This does not use the specific palette, rather it quantizes each color channel which works well as an all-around shader.
 // See user defined values section to customize this shader and learn more about its capabilities. The effects are enhanced if you pair this with increased pixel sizes.
