@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------
-// About Bandither 1.1
+// About Bandither 1.2
 
-// Bandither is a non-linear "software-like" color banding and dithering shader by Immorpher. This does not use the specific palette, rather it quantizes each color channel which works well as an all-around shader.
+// Bandither is a non-linear "software-like" color banding and dithering shader. This does not use the specific palette, rather it quantizes each color channel which works well as an all-around shader.
 // See user defined values section to customize this shader and learn more about its capabilities. The effects are enhanced if you pair this with increased pixel sizes.
 
 // Color banding learned from code by SolarLune on this topic: https://blenderartists.org/t/reducing-the-number-of-colors-color-depth/571154
@@ -16,9 +16,9 @@
 
 float coloramt = 8; // Color levels per channel (red,green,blue) plus 1 (black). The lower the number, the more more bands and less colors used. 
 float bandcurve = 5; // Amount to non-linearly skew banding. Higher numbers have smoother darks and band brights more, which is good for dark games.
-float ditheramt = 0.5; // Amount of dithering from 0 to 1, and inbetween. A value of 0 produces sharp color bands, while 1 is completely dithered.
+int dithertype = 1; // Set to 0 for Bayer 2x2, 1 for Bayer 8x8, 2 for static noise, 3 for motion noise, 4 for scanline, 5 for checker, 6 for magic square, and 7 for grid dithering.
 int ditherscale = 1; // Pixel scale for dithering. Normally it should be 1, but if you are playing at a lower resolution, this may need to be increased to match pixel size.
-int dithertype = 1; // Set to 0 for Bayer 2x2, 1 for Bayer 8x8, 2 for static noise, 3 for motion noise, and 4 for scanline dithering.
+float ditheramt = 0.5; // Amount of dithering from 0 to 1, and inbetween. A value of 0 produces sharp color bands, while 1 is completely dithered.
 
 // ---------------------------------------------------------------------
 // Dithering functions
@@ -82,7 +82,47 @@ vec4 scanline(vec2 position, vec4 brightness) {
 	return vec4(float(compare.r),float(compare.g),float(compare.b),float(compare.a)); // return as usable floats
 }
 
-// Bayer 2x2 dither roughly adapted from: https://github.com/hughsk/glsl-dither
+// Checker 2x2 dither inspired by bayer 2x2
+vec4 checker(vec2 position, vec4 brightness) {
+	int x = int(mod(position.x, 2.0)); // restrict to 2 pixel increments horizontally
+	int y = int(mod(position.y, 2.0)); // restrict to 2 pixel increments vertically
+	int index = x + y * 2; // determine position in Bayer array
+	float limit = 0.0; // comparison place holder value
+	bvec4 compare = bvec4(0,0,0,0); // boolean vector for comparison of brightness vec4
+
+	// define checker 2x2 array of 4 values
+	float check[4] = float[4](0.333,0.666,0.666,0.333);
+	
+	// Find and adjust the limit value to scale the dithering
+	limit = ditheramt*ditheramt*check[index] + (1-ditheramt*ditheramt)*0.5; // 0.5 is for round up or down
+	
+	// determine which color values to quantize up for dithering
+	compare = greaterThan(brightness,vec4(limit,limit,limit,limit));
+	
+	return vec4(float(compare.r),float(compare.g),float(compare.b),float(compare.a)); // return as usable floats
+}
+
+// Grid 2x2 dither inspired by bayer 2x2
+vec4 grid2x2(vec2 position, vec4 brightness) {
+	int x = int(mod(position.x, 2.0)); // restrict to 2 pixel increments horizontally
+	int y = int(mod(position.y, 2.0)); // restrict to 2 pixel increments vertically
+	int index = x + y * 2; // determine position in Bayer array
+	float limit = 0.0; // comparison place holder value
+	bvec4 compare = bvec4(0,0,0,0); // boolean vector for comparison of brightness vec4
+
+	// define grid 2x2 array of 4 values
+	float grid[4] = float[4](0.75,0.5,0.5,0.25);
+	
+	// Find and adjust the limit value to scale the dithering
+	limit = ditheramt*ditheramt*grid[index] + (1-ditheramt*ditheramt)*0.5; // 0.5 is for round up or down
+	
+	// determine which color values to quantize up for dithering
+	compare = greaterThan(brightness,vec4(limit,limit,limit,limit));
+	
+	return vec4(float(compare.r),float(compare.g),float(compare.b),float(compare.a)); // return as usable floats
+}
+
+// Bayer 2x2 dither roughly adapted and corrected from: https://github.com/hughsk/glsl-dither
 vec4 dither2x2(vec2 position, vec4 brightness) {
 	int x = int(mod(position.x, 2.0)); // restrict to 2 pixel increments horizontally
 	int y = int(mod(position.y, 2.0)); // restrict to 2 pixel increments vertically
@@ -91,10 +131,30 @@ vec4 dither2x2(vec2 position, vec4 brightness) {
 	bvec4 compare = bvec4(0,0,0,0); // boolean vector for comparison of brightness vec4
 
 	// define bayer 2x2 array of 4 values
-	float bayer[4] = float[4](0.25,0.75,1.00,0.50);
+	float bayer[4] = float[4](0.2,0.6,0.8,0.4);
 	
 	// Find and adjust the limit value to scale the dithering
 	limit = ditheramt*ditheramt*bayer[index] + (1-ditheramt*ditheramt)*0.5; // 0.5 is for round up or down
+	
+	// determine which color values to quantize up for dithering
+	compare = greaterThan(brightness,vec4(limit,limit,limit,limit));
+	
+	return vec4(float(compare.r),float(compare.g),float(compare.b),float(compare.a)); // return as usable floats
+}
+
+// Magic Square 3x3 dither inspired by https://en.wikipedia.org/wiki/Magic_square
+vec4 magic3x3(vec2 position, vec4 brightness) {
+	int x = int(mod(position.x, 3.0)); // restrict to 3 pixel increments horizontally
+	int y = int(mod(position.y, 3.0)); // restrict to 3 pixel increments vertically
+	int index = x + y * 3; // determine position in Bayer array
+	float limit = 0.0; // comparison place holder value
+	bvec4 compare = bvec4(0,0,0,0); // boolean vector for comparison of brightness vec4
+	
+	// define magic square 3x3 array of 9 values
+	float magic[9] = float[9](0.2,0.7,0.6,0.9,0.5,0.1,0.4,0.3,0.8);
+		
+	// Find and adjust the limit value to scale the dithering
+	limit = ditheramt*ditheramt*magic[index] + (1-ditheramt*ditheramt)*0.5;
 	
 	// determine which color values to quantize up for dithering
 	compare = greaterThan(brightness,vec4(limit,limit,limit,limit));
@@ -111,7 +171,7 @@ vec4 dither8x8(vec2 position, vec4 brightness) {
 	bvec4 compare = bvec4(0,0,0,0); // boolean vector for comparison of brightness vec4
 	
 	// define bayer 8x8 array of 64 values
-	float bayer[64] = float[64](0.015625,0.515625,0.140625,0.640625,0.046875,0.546875,0.171875,0.671875,0.765625,0.265625,0.890625,0.390625,0.796875,0.296875,0.921875,0.421875,0.203125,0.703125,0.078125,0.578125,0.234375,0.734375,0.109375,0.609375,0.953125,0.453125,0.828125,0.328125,0.984375,0.484375,0.859375,0.359375,0.0625,0.5625,0.1875,0.6875,0.03125,0.53125,0.15625,0.65625,0.8125,0.3125,0.9375,0.4375,0.78125,0.28125,0.90625,0.40625,0.25,0.75,0.125,0.625,0.21875,0.71875,0.09375,0.59375,1.0,0.5,0.875,0.375,0.96875,0.46875,0.84375,0.34375);
+	float bayer[64] = float[64](0.01538461538,0.5076923077,0.1384615385,0.6307692308,0.04615384615,0.5384615385,0.1692307692,0.6615384615,0.7538461538,0.2615384615,0.8769230769,0.3846153846,0.7846153846,0.2923076923,0.9076923077,0.4153846154,0.2,0.6923076923,0.07692307692,0.5692307692,0.2307692308,0.7230769231,0.1076923077,0.6,0.9384615385,0.4461538462,0.8153846154,0.3230769231,0.9692307692,0.4769230769,0.8461538462,0.3538461538,0.06153846154,0.5538461538,0.1846153846,0.6769230769,0.03076923077,0.5230769231,0.1538461538,0.6461538462,0.8,0.3076923077,0.9230769231,0.4307692308,0.7692307692,0.2769230769,0.8923076923,0.4,0.2461538462,0.7384615385,0.1230769231,0.6153846154,0.2153846154,0.7076923077,0.09230769231,0.5846153846,0.9846153846,0.4923076923,0.8615384615,0.3692307692,0.9538461538,0.4615384615,0.8307692308,0.3384615385);
 		
 	// Find and adjust the limit value to scale the dithering
 	limit = ditheramt*ditheramt*bayer[index] + (1-ditheramt*ditheramt)*0.5;
@@ -150,8 +210,14 @@ vec4 colround(float value, vec2 position, vec4 color){ // Rounding function
 		c = cfloor + cceil*staticnoise(position,c-cfloor);
 	} else if (dithertype == 3) { // Motion dither
 		c = cfloor + cceil*motionnoise(position,c-cfloor);
-	} else { // Motion dither
+	} else if (dithertype == 4) { // Scanline dither
 		c = cfloor + cceil*scanline(position,c-cfloor);
+	} else if (dithertype == 5) { // Checker dither
+		c = cfloor + cceil*checker(position,c-cfloor);
+	} else if (dithertype == 6) { // Magic square dither
+		c = cfloor + cceil*magic3x3(position,c-cfloor);
+	} else { // Grid Dither
+		c = cfloor + cceil*grid2x2(position,c-cfloor);
 	}
 	
 	// return back to normal color space

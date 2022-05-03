@@ -18,4 +18,7 @@ OptionValue "DitherOpts"
 	2, "Static Noise"
 	3, "Motion Noise"
 	4, "Scanline"
+	5, "Checker"
+	6, "Magic Square"
+	7, "Grid"
 }
