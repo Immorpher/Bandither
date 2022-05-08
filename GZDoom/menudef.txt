@@ -5,7 +5,9 @@ AddOptionMenu "OptionsMenu"
 	Option		"Enabled", "gl_bandither_enabled", "OnOff"
 	Slider		"Color Levels", "gl_bandither_colorlevels", 2.0, 64.0, 1.0
 	Slider		"Banding Curve", "gl_bandither_bandingstyle", 0.1, 20.0, 0.1
-	Option		"Dither Style", "gl_bandither_ditherstyle", "DitherOpts"
+	Option		"First Dither", "gl_bandither_ditherstyle1", "DitherOpts"
+	Option		"Second Dither", "gl_bandither_ditherstyle2", "DitherOpts"
+	Slider		"Dither Blend", "gl_bandither_ditherblending", 0.0, 1.0, 0.01
 	Slider		"Dither Level", "gl_bandither_dither", 0.0, 1.0, 0.01
 	Slider		"Dither Scale", "gl_bandither_ditheringscale", 1, 32, 1
 }

@@ -10,14 +10,21 @@ class BanditherEventHandler : EventHandler
 			bool enabled = CVar.GetCVar("gl_bandither_enabled", p).GetBool();
 			float colorlevels = CVar.GetCVar("gl_bandither_colorlevels", p).GetFloat();
 			float bandingstyle = CVar.GetCVar("gl_bandither_bandingstyle", p).GetFloat();
-			int ditherstyle = CVar.GetCVar("gl_bandither_ditherstyle", p).GetInt();
+			int ditherstyle1 = CVar.GetCVar("gl_bandither_ditherstyle1", p).GetInt();
+			int ditherstyle2 = CVar.GetCVar("gl_bandither_ditherstyle2", p).GetInt();
+			float ditherblending = CVar.GetCVar("gl_bandither_ditherblending", p).GetFloat();
 			float dithering = CVar.GetCVar("gl_bandither_dither", p).GetFloat();
 			int ditheringscale = CVar.GetCVar("gl_bandither_ditheringscale", p).GetInt();
 			
-			Shader.SetEnabled(p, "Bandither", enabled);
+			Shader.SetEnabled(p, "Bandither", enabled); // enable or disable shader
+			
+			// send in engine varibles to shader
+			Shader.SetUniform1f(p, "Bandither", "timer", gametic);
 			Shader.SetUniform1f(p, "Bandither", "colorlevels", colorlevels);
 			Shader.SetUniform1f(p, "Bandither", "dithering", dithering);
-			Shader.SetUniform1f(p, "Bandither", "ditherstyle", ditherstyle);
+			Shader.SetUniform1f(p, "Bandither", "ditherstyle1", ditherstyle1);
+			Shader.SetUniform1f(p, "Bandither", "ditherstyle2", ditherstyle2);
+			Shader.SetUniform1f(p, "Bandither", "ditherblending", ditherblending);
 			Shader.SetUniform1f(p, "Bandither", "bandingstyle", bandingstyle);
 			Shader.SetUniform1f(p, "Bandither", "ditheringscale", ditheringscale);
 		}

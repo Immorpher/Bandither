@@ -1,6 +1,8 @@
 user bool gl_bandither_enabled = true;
 user float gl_bandither_colorlevels = 8;
 user float gl_bandither_bandingstyle = 5;
-user int gl_bandither_ditherstyle = 1;
+user int gl_bandither_ditherstyle1 = 1;
+user int gl_bandither_ditherstyle2 = 3;
+user float gl_bandither_ditherblending = 0;
 user float gl_bandither_dither = 0.5;
 user float gl_bandither_ditheringscale = 1;

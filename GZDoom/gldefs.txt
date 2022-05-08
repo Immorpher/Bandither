@@ -4,7 +4,10 @@ HardwareShader PostProcess scene
 	Shader "shaders/bandither.fp" 330
 	Uniform float colorlevels
 	Uniform float bandingstyle
-	Uniform int ditherstyle
+	Uniform int ditherstyle1
+	Uniform int ditherstyle2
+	Uniform float ditherblending
 	Uniform float dithering
 	Uniform int ditheringscale
+	Uniform int timer
 }
