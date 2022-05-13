@@ -1,4 +1,4 @@
-About Bandither 1.3
+About Bandither 1.4
 ----------------------------------------------
 Bandither is a non-linear color banding and dithering shader. It quantizes each color channel similar to 3D graphics hardware of the 1990's (Sega Saturn, Playstation 1, Nintendo 64, Voodoo 1/2) and can be skewed for darker games.
 
