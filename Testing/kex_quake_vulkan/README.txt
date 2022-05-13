@@ -1,0 +1,1 @@
+This is for open GL / vulkan compiling. I cant seem to get it to access the Vulkan SDK to compile.

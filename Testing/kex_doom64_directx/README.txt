@@ -1,0 +1,1 @@
+This contains files for testing on the KEX engine DirectX mode. Currently it does not work. It compiles but black screen.

@@ -1,31 +1,42 @@
 // ---------------------------------------------------------------------
-// About Bandither 1.3
+// About Bandither 1.4
 
-// Bandither is a non-linear "software-like" color banding and dithering shader. This does not use the specific palette, rather it quantizes each color channel which works well as an all-around shader.
+// Bandither is a non-linear color banding and dithering shader. It quantizes each color channel similar to graphics hardware of the mid-1990's and can be skewed for darker games.
 // See user defined values section to customize this shader and learn more about its capabilities. The effects are enhanced if you pair this with increased pixel sizes.
 
 // Color banding learned from code by SolarLune on this topic: https://blenderartists.org/t/reducing-the-number-of-colors-color-depth/571154
 // Bayer dithering learned from code by hughsk: https://github.com/hughsk/glsl-dither
 // Noise dithering learned from this code: https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
-// GZDoom implementation based on code from Molecicco and FTEQW implementation based on code from JaycieErysdren
+// GZDoom implementation based on code from Molecicco, FTEQW implementation based on code from JaycieErysdren, and KEX engine implementation based on code from Kaiser.
 // Twitter: https://twitter.com/immorpher64
 // YouTube: https://www.youtube.com/c/Immorpher
 
 !!ver 450
 !!samps screen=0
-!!samps time=1
-
 
 // ---------------------------------------------------------------------
 // User defined values
 
-float coloramt = 7; // Color levels per channel (red,green,blue) plus 1 (black). The lower the number, the more more bands and less colors used. 
-float bandcurve = 5; // Amount to non-linearly skew banding. Higher numbers have smoother darks and band brights more, which is good for dark games.
-int dithertype1 = 1; // First dither: 0 for Bayer 2x2, 1 for Bayer 8x8, 2 for static noise, 3 for motion noise, 4 for scanline, 5 for checker, 6 for magic square, and 7 for grid dithering.
-int dithertype2 = 3; // Second dither: 0 for Bayer 2x2, 1 for Bayer 8x8, 2 for static noise, 3 for motion noise, 4 for scanline, 5 for checker, 6 for magic square, and 7 for grid dithering.
-float ditherblend = 0; // How much to blend first and second dithers from first (0) to second (1).
-float ditheramt = 0.5; // Amount of dithering from 0 to 1, and inbetween. A value of 0 produces sharp color bands, while 1 is completely dithered.
-int ditherscale = 1; // Pixel scale for dithering. Normally it should be 1, but if you are playing at a lower resolution, this may need to be increased to match pixel size.
+ // Color levels per channel (red,green,blue) plus 1 (black). The lower the number, the more more bands and less colors used.
+!!cvardf r_band_coloramt=7
+
+ // Amount to non-linearly skew banding. Higher numbers have smoother darks and band brights more, which is good for dark games.
+!!cvardf r_band_bandcurve=5
+
+ // First dither: 0 for Bayer 2x2, 1 for Bayer 8x8, 2 for static noise, 3 for motion noise, 4 for scanline, 5 for checker, 6 for magic square, and 7 for grid dithering.
+!!cvardf r_band_dithertype1=1
+
+// Second dither: 0 for Bayer 2x2, 1 for Bayer 8x8, 2 for static noise, 3 for motion noise, 4 for scanline, 5 for checker, 6 for magic square, and 7 for grid dithering.
+!!cvardf r_band_dithertype2=3
+
+ // How much to blend first and second dithers from first (0) to second (1).
+!!cvardf r_band_ditherblend=0.2
+
+// Amount of dithering from 0 to 1, and inbetween. A value of 0 produces sharp color bands, while 1 is completely dithered.
+!!cvardf r_band_ditheramt=0.5
+
+ // Pixel scale of the dithering. Set r_renderscale -1/pixelscale in FTEQW console to match screen resolution.
+!!cvardf r_band_pixelscale=1
 
 
 // ---------------------------------------------------------------------
@@ -179,12 +190,12 @@ vec4 dither8x8(vec2 position) {
 // Color quantization learned from: https://blenderartists.org/t/reducing-the-number-of-colors-color-depth/571154
 vec4 colround(vec2 position, vec4 color){ // Rounding function
 	vec4 c = color;
-	float colorbands = coloramt/atan(bandcurve); // normalize color level value by band curve adjustment
+	float colorbands = r_band_coloramt/atan(r_band_bandcurve); // normalize color level value by band curve adjustment
 	vec4 ditherlimit = vec4(0,0,0,0); // dither probability vector
 	bvec4 compare = bvec4(0,0,0,0); // boolean vector for comparison of dither limit vector
 	
 	// apply non-linear banding
-	c *= bandcurve; // adjust for non-linear scaling
+	c *= r_band_bandcurve; // adjust for non-linear scaling
 	c = atan(c); // non-linear scale the colors before banding	
 	
 	c *= colorbands; // Multiply the vector by the color level value for banding
@@ -194,47 +205,47 @@ vec4 colround(vec2 position, vec4 color){ // Rounding function
 	vec4 cceil = ceil(c)-floor(c); // round up to higher band
 	
 	// determine first dither probability
-	if (dithertype1 == 0) { // Bayer 2x2 dither
+	if (r_band_dithertype1 == 0) { // Bayer 2x2 dither
 		ditherlimit = dither2x2(position);
-	} else if (dithertype1 == 1) { // Bayer 8x8 dither
+	} else if (r_band_dithertype1 == 1) { // Bayer 8x8 dither
 		ditherlimit = dither8x8(position);
-	} else if (dithertype1 == 2) { // Static noise dither
+	} else if (r_band_dithertype1 == 2) { // Static noise dither
 		ditherlimit = staticnoise(position);
-	} else if (dithertype1 == 3) { // Motion dither
+	} else if (r_band_dithertype1 == 3) { // Motion dither
 		ditherlimit = motionnoise(position,c-cfloor);
-	} else if (dithertype1 == 4) { // Scanline dither
+	} else if (r_band_dithertype1 == 4) { // Scanline dither
 		ditherlimit = scanline(position);
-	} else if (dithertype1 == 5) { // Checker dither
+	} else if (r_band_dithertype1 == 5) { // Checker dither
 		ditherlimit = checker(position);
-	} else if (dithertype1 == 6) { // Magic square dither
+	} else if (r_band_dithertype1 == 6) { // Magic square dither
 		ditherlimit = magic3x3(position);
 	} else { // Grid Dither
 		ditherlimit = grid2x2(position);
 	}
 	
-	ditherlimit = ditherlimit*(1-ditherblend); // adjust first dither
+	ditherlimit = ditherlimit*(1-r_band_ditherblend); // adjust first dither
 	
 	// determine second dither probability
-	if (dithertype2 == 0) { // Bayer 2x2 dither
-		ditherlimit = ditherlimit + ditherblend*dither2x2(position);
-	} else if (dithertype2 == 1) { // Bayer 8x8 dither
-		ditherlimit = ditherlimit + ditherblend*dither8x8(position);
-	} else if (dithertype2 == 2) { // Static noise dither
-		ditherlimit = ditherlimit + ditherblend*staticnoise(position);
-	} else if (dithertype2 == 3) { // Motion dither
-		ditherlimit = ditherlimit + ditherblend*motionnoise(position,c-cfloor);
-	} else if (dithertype2 == 4) { // Scanline dither
-		ditherlimit = ditherlimit + ditherblend*scanline(position);
-	} else if (dithertype2 == 5) { // Checker dither
-		ditherlimit = ditherlimit + ditherblend*checker(position);
-	} else if (dithertype2 == 6) { // Magic square dither
-		ditherlimit = ditherlimit + ditherblend*magic3x3(position);
+	if (r_band_dithertype2 == 0) { // Bayer 2x2 dither
+		ditherlimit = ditherlimit + r_band_ditherblend*dither2x2(position);
+	} else if (r_band_dithertype2 == 1) { // Bayer 8x8 dither
+		ditherlimit = ditherlimit + r_band_ditherblend*dither8x8(position);
+	} else if (r_band_dithertype2 == 2) { // Static noise dither
+		ditherlimit = ditherlimit + r_band_ditherblend*staticnoise(position);
+	} else if (r_band_dithertype2 == 3) { // Motion dither
+		ditherlimit = ditherlimit + r_band_ditherblend*motionnoise(position,c-cfloor);
+	} else if (r_band_dithertype2 == 4) { // Scanline dither
+		ditherlimit = ditherlimit + r_band_ditherblend*scanline(position);
+	} else if (r_band_dithertype2 == 5) { // Checker dither
+		ditherlimit = ditherlimit + r_band_ditherblend*checker(position);
+	} else if (r_band_dithertype2 == 6) { // Magic square dither
+		ditherlimit = ditherlimit + r_band_ditherblend*magic3x3(position);
 	} else { // Grid Dither
-		ditherlimit = ditherlimit + ditherblend*grid2x2(position);
+		ditherlimit = ditherlimit + r_band_ditherblend*grid2x2(position);
 	}
 	
 	// Adjust dither amount based on 0.5 for rounding
-	ditherlimit = ditheramt*ditherlimit + (1-ditheramt)*0.5; // 0.5 is for rounding up or down
+	ditherlimit = r_band_ditheramt*ditherlimit + (1-r_band_ditheramt)*0.5; // 0.5 is for rounding up or down
 	
 	// determine which color values to quantize up for dithering
 	compare = greaterThan(c-cfloor,ditherlimit);
@@ -244,7 +255,7 @@ vec4 colround(vec2 position, vec4 color){ // Rounding function
 	
 	// return back to normal color space
 	c /= colorbands; // Re-normalize to normal color space
-	c = tan(c)/bandcurve; // Go back to linear color space
+	c = tan(c)/r_band_bandcurve; // Go back to linear color space
 	
 	return c;
 }
@@ -254,12 +265,11 @@ vec4 colround(vec2 position, vec4 color){ // Rounding function
 // Main operations
 
 uniform sampler2D bgl_RenderedTexture; // get screen texture?
-uniform float time;
 
 #ifdef FRAGMENT_SHADER
-	void main() {
+	void main() {	
 		vec4 color = texture(s_screen, texcoord.xy); // grab color value from screen coordinate
-		color = colround(floor(gl_FragCoord.xy/ditherscale), color); // band it and dither it
+		color = colround(floor(gl_FragCoord.xy/r_band_pixelscale), color); // band it and dither it
 		gl_FragColor = color; // apply color to screen
 	}
 #endif
