@@ -1,7 +1,6 @@
 // ---------------------------------------------------------------------
 // About Bandither 1.4
 
-// This is a testing shader for the KEX engine to test in DirectX mode. It currently does not work.
 // Bandither is a non-linear color banding and dithering shader. It quantizes each color channel similar to 3D graphics hardware of the 1990's (Sega Saturn, Playstation 1, Nintendo 64, Voodoo 1/2) and can be skewed for darker games.
 // See user defined values section to customize this shader and learn more about its capabilities. The effects are enhanced if you pair this with increased pixel sizes.
 
@@ -12,104 +11,128 @@
 // Twitter: https://twitter.com/immorpher64
 // YouTube: https://www.youtube.com/c/Immorpher
 
-#include "progs/common.inc"
 
-float coloramt = 7; // Color levels per channel (red,green,blue) plus 1 (black). The lower the number, the more more bands and less colors used. 
-float bandcurve = 5; // Amount to non-linearly skew banding. Higher numbers have smoother darks and band brights more, which is good for dark games.
-int dithertype1 = 1; // First dither: 0 for Bayer 2x2, 1 for Bayer 8x8, 2 for static noise, 3 for motion noise, 4 for scanline, 5 for checker, 6 for magic square, and 7 for grid dithering.
-int dithertype2 = 3; // Second dither: 0 for Bayer 2x2, 1 for Bayer 8x8, 2 for static noise, 3 for motion noise, 4 for scanline, 5 for checker, 6 for magic square, and 7 for grid dithering.
-float ditherblend = 0.2; // How much to blend first and second dithers from first (0) to second (1).
-float ditheramt = 0.5; // Amount of dithering from 0 to 1, and inbetween. A value of 0 produces sharp color bands, while 1 is completely dithered.
-int pixelscale = 2; // Pixel scale for dithering. Normally it should be 1, but if you are playing at a lower resolution, this may need to be increased to match pixel size.
+// --------------------------------------------------------------------
+// Header data for reshade
 
-#ifdef SHADER_VERTEX
+// Get Reshade definitions
+#include "ReShade.fxh"
 
-//----------------------------------------------------
-// input
-begin_input(inVertex)
-    var_attrib(ATTRIB_POSITION, vec3);
-    var_attrib(ATTRIB_TEXCOORD, vec2);
-    var_attrib(ATTRIB_COLOR, vec4);
-end_input
-
-//----------------------------------------------------
-// output
-begin_output(outVertex)
-    def_var_outPosition(position)
-    def_var_out(vec2, out_texcoord, TEXCOORD0)
-    def_var_out(vec4, out_color,    COLOR0)
-end_output
-
-//----------------------------------------------------
-shader_main(outVertex, inVertex, input)
+// Sample the screen
+sampler Linear
 {
-    declareOutVar(outVertex, output)
-    
-    vec4 vertex                         = vec4(inVarAttrib(ATTRIB_POSITION, input), 1.0);
-    outVarPosition(output, position)    = mul(uProjectionMatrix, mul(uModelViewMatrix, vertex));
-    outVar(output, out_texcoord)        = inVarAttrib(ATTRIB_TEXCOORD, input);
-    outVar(output, out_color)           = inVarAttrib(ATTRIB_COLOR, input);
-    
-    outReturn(output)
-}
+	Texture = ReShade::BackBufferTex;
+	SRGBTexture = true;
+};
 
-#endif
+// Grab time
+uniform float Timer < source = "timer"; >;
 
-#ifdef SHADER_PIXEL
 
-//----------------------------------------------------
-// input
-begin_input(outVertex)
-    def_var_position(position)
-    def_var_in(vec2, out_texcoord, TEXCOORD0)
-    def_var_in(vec4, out_color,    COLOR0)
-end_input
+// ---------------------------------------------------------------------
+// User defined values for UI
 
-//----------------------------------------------------
-// output
-begin_output(outPixel)
-    def_var_fragment(fragment)
-end_output
+uniform int coloramt < 
+	ui_type = "slider";
+	ui_min = 1; ui_max = 31;
+	ui_label = "Color Levels";
+	ui_tooltip = "Color levels per channel (red,green,blue) plus 1 (black). The lower the number, the more more bands and less colors used.";
+> = 7;
 
-// KEX DirectX modulo function
-float modulo(float x, float y) {
-	float mod = x - y * floor(x/y);
-	return mod;
-}
+uniform float bandcurve < 
+	ui_type = "slider";
+	ui_min = 0.001; ui_max = 10;
+	ui_label = "Banding Curve";
+	ui_tooltip = "Amount to non-linearly skew banding. Higher numbers have smoother darks and band brights more, which is good for dark games.";
+> = 5;
+
+uniform int dithertype1 <
+	ui_type = "combo";
+	ui_tooltip = "First dither type.";
+	ui_label = "First Dither";
+	ui_items = "Bayer 2x2\0"
+	           "Bayer 8x8\0"
+	           "Static Noise\0"
+	           "Motion Noise\0"
+	           "Scanline\0"
+	           "Checker\0"
+	           "Magic Square\0"
+	           "Grid\0";
+> = 1;
+
+uniform int dithertype2 <
+	ui_type = "combo";
+	ui_tooltip = "Second dither type.";
+	ui_label = "Second Dither";
+	ui_items = "Bayer 2x2\0"
+	           "Bayer 8x8\0"
+	           "Static Noise\0"
+	           "Motion Noise\0"
+	           "Scanline\0"
+	           "Checker\0"
+	           "Magic Square\0"
+	           "Grid\0";
+> = 3;
+
+uniform float ditherblend < 
+	ui_type = "slider";
+	ui_min = 0; ui_max = 1;
+	ui_label = "Dither Blend";
+	ui_tooltip = "How much to blend first and second dithers from first (0) to second (1).";
+> = 0.2;
+
+uniform float ditheramt < 
+	ui_type = "slider";
+	ui_min = 0; ui_max = 1;
+	ui_label = "Dither Amount";
+	ui_tooltip = "Amount of dithering from 0 to 1, and inbetween. A value of 0 produces sharp color bands, while 1 is completely dithered.";
+> = 0.5;
+
+uniform int pixelscale < 
+	ui_type = "slider";
+	ui_min = 1; ui_max = 10;
+	ui_label = "Pixel Scale";
+	ui_tooltip = "Pixel size on screen to lower resolution. Ideally this is best done with an engine setting if the engine offers it.";
+> = 2;
+
 
 // ---------------------------------------------------------------------
 // Dithering functions
 
+// definite modulo operator for hlsl, since online documentation aint great
+float modulo(float x, float y) {
+	return x - y * trunc(x/y);
+}
+
 // Static noise based dither roughly learned from: https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
-vec4 staticnoise(vec2 position){ 
+float4 staticnoise(float2 position){ 
 	float limit = 0.0; // dither on or off
-	vec2 wavenum = vec2(12.9898,78.233); // screen position noise
+	float2 wavenum = float2(12.9898,78.233); // screen position noise
 	
 	// Get random number based on oscillating sine
-    limit = fract(sin(dot(position,wavenum))*23758.5453);
+    limit = frac(sin(dot(position,wavenum))*23758.5453);
 	
-	return vec4(limit,limit,limit,limit); // return as vec4
+	return float4(limit,limit,limit,limit); // return as float4
 }
 
 // Motion noise based dither roughly learned from: https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
-vec4 motionnoise(vec2 position, vec4 brightness){ 
-	vec4 limit = vec4(0,0,0,0); // dither on or off
-	vec2 wavenum = vec2(12.9898,78.233); // screen position noise
-	vec4 colornum = vec4(34.5345,67.5355,11.42455,83.7547); // color value noise
-	float timer = 1; // fixed timer for now
+float4 motionnoise(float2 position, float4 brightness){ 
+	float4 limit = float4(0,0,0,0); // dither on or off
+	float2 wavenum = float2(12.9898,78.233); // screen position noise
+	float4 colornum = float4(34.5345,67.5355,11.42455,83.7547); // color value noise
 	
 	// Alternate oscillations
-	wavenum = wavenum + sin(timer*vec2(34.9898,50.233));
-	colornum = colornum + sin(timer*vec4(44.9808,15.638,66.3456,10.3563));
+	wavenum = wavenum + sin(Timer*float2(34.9898,50.233));
+	colornum = colornum + sin(Timer*float4(44.9808,15.638,66.3456,10.3563));
 	
 	// Get random number based on oscillating sine
-    limit = fract((sin(dot(position,wavenum)+timer)+sin(brightness*colornum*timer))*23758.5453);
+    limit = frac((sin(dot(position,wavenum)+Timer)+sin(brightness*colornum*Timer))*23758.5453);
 	
 	return limit; // return limit
 }
 
 // Scanline dithering inspired by bayer style
-vec4 scanline(vec2 position) {
+float4 scanline(float2 position) {
 	int y = int(modulo(position.y, 2.0)); // restrict to 2 pixel increments vertically
 	float limit = 0.0; // comparison place holder value
 
@@ -121,11 +144,11 @@ vec4 scanline(vec2 position) {
 	// Find and adjust the limit value to scale the dithering
 	limit = scanline[y];
 	
-	return vec4(limit,limit,limit,limit); // return limits
+	return float4(limit,limit,limit,limit); // return limits
 }
 
 // Checker 2x2 dither inspired by bayer 2x2
-vec4 checker(vec2 position) {
+float4 checker(float2 position) {
 	int x = int(modulo(position.x, 2.0)); // restrict to 2 pixel increments horizontally
 	int y = int(modulo(position.y, 2.0)); // restrict to 2 pixel increments vertically
 	int index = x + y * 2; // determine position in Bayer array
@@ -141,11 +164,11 @@ vec4 checker(vec2 position) {
 	// Find and adjust the limit value to scale the dithering
 	limit = check[index];
 	
-	return vec4(limit,limit,limit,limit); // return
+	return float4(limit,limit,limit,limit); // return
 }
 
 // Grid 2x2 dither inspired by bayer 2x2
-vec4 grid2x2(vec2 position) {
+float4 grid2x2(float2 position) {
 	int x = int(modulo(position.x, 2.0)); // restrict to 2 pixel increments horizontally
 	int y = int(modulo(position.y, 2.0)); // restrict to 2 pixel increments vertically
 	int index = x + y * 2; // determine position in Bayer array
@@ -161,11 +184,11 @@ vec4 grid2x2(vec2 position) {
 	// Find and adjust the limit value to scale the dithering
 	limit = grid[index];
 	
-	return vec4(limit,limit,limit,limit); // return
+	return float4(limit,limit,limit,limit); // return
 }
 
 // Bayer 2x2 dither roughly adapted and corrected from: https://github.com/hughsk/glsl-dither
-vec4 dither2x2(vec2 position) {
+float4 dither2x2(float2 position) {
 	int x = int(modulo(position.x, 2.0)); // restrict to 2 pixel increments horizontally
 	int y = int(modulo(position.y, 2.0)); // restrict to 2 pixel increments vertically
 	int index = x + y * 2; // determine position in Bayer array
@@ -181,11 +204,11 @@ vec4 dither2x2(vec2 position) {
 	// Find and adjust the limit value to scale the dithering
 	limit = bayer[index];
 	
-	return vec4(limit,limit,limit,limit); // return
+	return float4(limit,limit,limit,limit); // return
 }
 
 // Magic Square 3x3 dither inspired by https://en.wikipedia.org/wiki/Magic_square
-vec4 magic3x3(vec2 position) {
+float4 magic3x3(float2 position) {
 	int x = int(modulo(position.x, 3.0)); // restrict to 3 pixel increments horizontally
 	int y = int(modulo(position.y, 3.0)); // restrict to 3 pixel increments vertically
 	int index = x + y * 3; // determine position in magic square array
@@ -206,16 +229,16 @@ vec4 magic3x3(vec2 position) {
 	// Find and adjust the limit value to scale the dithering
 	limit = magic[index];
 	
-	return vec4(limit,limit,limit,limit); // return
+	return float4(limit,limit,limit,limit); // return
 }
 
 // Bayer 8x8 dither roughly adapted from: https://github.com/hughsk/glsl-dither
-vec4 dither8x8(vec2 position) {
+float4 dither8x8(float2 position) {
 	int x = int(modulo(position.x, 8.0)); // restrict to 8 pixel increments horizontally
 	int y = int(modulo(position.y, 8.0)); // restrict to 8 pixel increments vertically
 	int index = x + y * 8; // determine position in Bayer array
 	float limit = 0.0; // comparison place holder value
-	bvec4 compare = bvec4(0,0,0,0); // boolean vector for comparison of brightness vec4
+	bool4 compare = bool4(0,0,0,0); // boolean vector for comparison of brightness float4
 	
 	// define bayer 8x8 array of 64 values
 	float bayer[64];
@@ -287,7 +310,7 @@ vec4 dither8x8(vec2 position) {
 	// Find and adjust the limit value to scale the dithering
 	limit = bayer[index];
 	
-	return vec4(limit,limit,limit,limit); // return
+	return float4(limit,limit,limit,limit); // return
 }
 
 
@@ -295,11 +318,14 @@ vec4 dither8x8(vec2 position) {
 // Color banding with addition of dither
 
 // Color quantization learned from: https://blenderartists.org/t/reducing-the-number-of-colors-color-depth/571154
-vec4 colround(vec2 position, vec4 color){ // Rounding function
-	vec4 c = color;
+float4 colround(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
+{
+	float2 position = floor(texcoord.xy*BUFFER_SCREEN_SIZE/pixelscale);
+	float4 color = tex2D(ReShade::BackBuffer, (position*pixelscale+floor(pixelscale*0.5))/BUFFER_SCREEN_SIZE).rgba;
+	float4 c = color;
 	float colorbands = coloramt/atan(bandcurve); // normalize color level value by band curve adjustment
-	vec4 ditherlimit = vec4(0,0,0,0); // dither probability vector
-	bvec4 compare = bvec4(0,0,0,0); // boolean vector for comparison of dither limit vector
+	float4 ditherlimit = float4(0,0,0,0); // dither probability vector
+	bool4 compare = bool4(0,0,0,0); // boolean vector for comparison of dither limit vector
 	
 	// apply non-linear banding
 	c *= bandcurve; // adjust for non-linear scaling
@@ -308,8 +334,8 @@ vec4 colround(vec2 position, vec4 color){ // Rounding function
 	c *= colorbands; // Multiply the vector by the color level value for banding
 	
 	// round colors to bands
-	vec4 cfloor = floor(c); // round down to lowest band
-	vec4 cceil = ceil(c)-floor(c); // round up to higher band
+	float4 cfloor = floor(c); // round down to lowest band
+	float4 cceil = ceil(c)-floor(c); // round up to higher band
 	
 	// determine first dither probability
 	if (dithertype1 == 0) { // Bayer 2x2 dither
@@ -362,7 +388,7 @@ vec4 colround(vec2 position, vec4 color){ // Rounding function
 	compare.a = (c.a-cfloor.a) > ditherlimit.a;
 	
 	// add dither
-	c = cfloor + cceil*vec4(float(compare.r),float(compare.g),float(compare.b),float(compare.a));
+	c = cfloor + cceil*float4(float(compare.r),float(compare.g),float(compare.b),float(compare.a));
 	
 	// return back to normal color space
 	c /= colorbands; // Re-normalize to normal color space
@@ -372,19 +398,25 @@ vec4 colround(vec2 position, vec4 color){ // Rounding function
 }
 
 
-def_sampler(2D, tBase, 0);
-
 //----------------------------------------------------
-shader_main(outPixel, outVertex, input)
+//shader_main(outPixel, outVertex, input)
+//{
+//    declareOutVar(outPixel, output)
+//	float2 coordinates = floor(inVar(input, out_texcoord)*ScreenSize()/pixelscale); // reduced coordinates based on pixel scale
+//    
+//    float4 frag = sampleLevelZero(tBase, (coordinates*pixelscale+floor(pixelscale*0.5))/ScreenSize()); // try to select middle pixel
+//    
+//    outVarFragment(output, fragment) = colround(coordinates, frag);
+//    outReturn(output)
+//}
+
+
+
+technique Bandither
 {
-    declareOutVar(outPixel, output)
-	vec2 coordinates = floor(inVar(input, out_texcoord)*ScreenSize()/pixelscale); // reduced coordinates based on pixel scale
-    
-    vec4 frag = sampleLevelZero(tBase, (coordinates*pixelscale+floor(pixelscale*0.5))/ScreenSize()); // try to select middle pixel
-    
-    outVarFragment(output, fragment) = colround(coordinates, frag);
-    outReturn(output)
+	pass
+	{
+		VertexShader = PostProcessVS;
+		PixelShader = colround;
+	}
 }
-
-
-#endif

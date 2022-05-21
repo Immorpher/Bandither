@@ -13,7 +13,7 @@ To change the Bandither settings, either unzip the Doom64.kpf or open it in a pr
 "dithertype1" has eight styles of dithering: Bayer 2x2, Bayer 8x8, static noise, motion noise, scanline, checker, magic square, and grid dithering.
 "dithertype2" also has eight styles of dithering: Bayer 2x2, Bayer 8x8, static noise, motion noise, scanline, checker, magic square, and grid dithering.
 "ditherblend" is how much to blend first and second dithers from completely first (0) to completely second (1) and inbetween.
-"ditherscale" is the pixel scale for dithering. Normally it should be 1, but if you are playing at a lower resolution, this may need to be increased to match pixel size.
+"pixelscale" is the pixel size on screen to lower resolution. Ideally this is best done with an engine setting if the engine offers it.
 "ditheramt" is the amount of dithering from 0 to 1, and inbetween. A value of 0 produces sharp color bands, while 1 is completely dithered.
 
 To apply these options, the shader must be recompiled. To do this you must edit the "kexengine.cfg" file, which is in the "\Saved Games\Nightdive Studios\DOOM 64\" directory of the windows user folder. Here change 'seta developer "0"' to 'seta developer "1"' and 'vk_compileShaders "0"' to 'vk_compileShaders "1"'. Next time you start Doom 64, it will compile the shader with your settings. I find it will compile it to run in the OpenGL video mode but not Vulkan video mode. If you get it to compile in Vulkan or Direct X, let me know!

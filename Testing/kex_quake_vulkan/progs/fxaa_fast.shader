@@ -1,6 +1,7 @@
 // ---------------------------------------------------------------------
 // About Bandither 1.4
 
+// This is a testing shader for the KEX engine to test in Vulkan mode. It currently does not work.
 // Bandither is a non-linear color banding and dithering shader. It quantizes each color channel similar to 3D graphics hardware of the 1990's (Sega Saturn, Playstation 1, Nintendo 64, Voodoo 1/2) and can be skewed for darker games.
 // See user defined values section to customize this shader and learn more about its capabilities. The effects are enhanced if you pair this with increased pixel sizes.
 
