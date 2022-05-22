@@ -5,16 +5,15 @@ Bandither is a non-linear color banding and dithering shader. It quantizes each 
 
 Installation and Use
 ----------------------------------------------
-To use the shader you can load it like any other WAD into GZDoom, where you can drag and drop "Bandither.pk3" onto the program, or use a launcher like ZDL.
+To use the shader first install ReShade onto your game/software of choice. Then in the "\reshade-shaders\Shaders\" directory of the program, add the "Bandither.fx" file. When you load your program, ReShade should also load which will give you instructions on how to set it up. Bandither.fx will now be one of the options. When selected you will find the following options:
 
-If you click on "Full options menu" in the GZDoom options menu, you will find these specific "Bandither" options
 "Color Levels" is the amount of colors per channel (red,green,blue). The lower the number, the more more bands and less colors used. 
 "Banding Curve" is the amount to non-linearly skew banding. Higher numbers have smoother darks and band brights more, which is good for dark games.
 "First Dither" has eight styles of dithering: Bayer 2x2, Bayer 8x8, static noise, motion noise, scanline, checker, magic square, and grid dithering.
 "Second Dither" also has eight styles of dithering: Bayer 2x2, Bayer 8x8, static noise, motion noise, scanline, checker, magic square, and grid dithering.
 "Dither Blend" is how much to blend first and second dithers from completely first (0) to completely second (1) and inbetween.
-"Dither Level" is the amount of dithering to use. A value of 0 produces sharp color bands, while 1 is completely dithered.
-"Dither Scale" is the pixel scale for dithering. Normally it should be 1, but if you are playing at a lower resolution, this may need to be increased to match pixel size.
+"Dither Amount" is the amount of dithering to use. A value of 0 produces sharp color bands, while 1 is completely dithered.
+"Pixel Scale" is the pixel scale for dithering. Normally it should be 1, but if you are playing at a lower resolution, this may need to be increased to match pixel size.
 
 
 Credits and Links

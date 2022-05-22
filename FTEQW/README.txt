@@ -5,7 +5,7 @@ Bandither is a non-linear color banding and dithering shader. It quantizes each 
 
 Installation and Use
 ----------------------------------------------
-To install this shader, move the "glsl" and "scripts" folder into the "id1" directory within the FTEQW directory. To use this shader, either add "r_postprocshader bandither" text to your fte.cfg, autoexec.cfg file, or when the game is loaded open the console with the "'" key and type the command in. This only works with OpenGL rendering with FTEQW
+To install this shader, move the "Bandither.pk3" file into the "id1" directory within the FTEQW directory. To use this shader, either add "r_postprocshader bandither" text to your fte.cfg, autoexec.cfg file, or when the game is loaded open the console with the "'" key and type the command in. This only works with OpenGL rendering with FTEQW
 
 Once the shader is loaded in FTEQW you can use these console variables to cusomize the shader:
 r_band_coloramt is the color levels per channel (red,green,blue) plus 1 (black). The lower the number, the more more bands and less colors used.
