@@ -1,7 +1,12 @@
 // main options
 AddOptionMenu "OptionsMenu"
 {
-	StaticText	"Bandither Shader", "Gold"
+	Submenu "Bandither Shader", "Bandither"
+}
+
+OptionMenu "Bandither"
+{
+	Title		"Bandither Shader"
 	Option		"Enabled", "gl_bandither_enabled", "OnOff"
 	Slider		"Color Levels", "gl_bandither_colorlevels", 2.0, 64.0, 1.0
 	Slider		"Banding Curve", "gl_bandither_bandingstyle", 0.1, 20.0, 0.1
