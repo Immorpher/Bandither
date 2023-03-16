@@ -1,4 +1,4 @@
-About Bandither 1.4
+About Bandither 1.41
 ----------------------------------------------
 Bandither is a non-linear color banding and dithering shader. It quantizes each color channel similar to 3D graphics hardware of the 1990's (Sega Saturn, Playstation 1, Nintendo 64, Voodoo 1/2) and can be skewed for darker games.
 
@@ -22,6 +22,7 @@ Color banding learned from code by SolarLune on this topic: https://blenderartis
 Bayer dithering learned from code by hughsk: https://github.com/hughsk/glsl-dither
 Noise dithering learned from this code: https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
 GZDoom implementation based on code from Molecicco, FTEQW implementation based on code from JaycieErysdren, and KEX engine implementation based on code from Kaiser.
+Thanks to proydoha & IDDQD1337 for updating the GZDoom code!
 
 Twitter: https://twitter.com/immorpher64
 YouTube: https://www.youtube.com/c/Immorpher
