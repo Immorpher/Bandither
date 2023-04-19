@@ -26,7 +26,7 @@ Credits and Links
 Color banding learned from code by SolarLune on this topic: https://blenderartists.org/t/reducing-the-number-of-colors-color-depth/571154
 Bayer dithering learned from code by hughsk: https://github.com/hughsk/glsl-dither
 Noise dithering learned from this code: https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
-GZDoom implementation based on code from Molecicco, FTEQW implementation based on code from JaycieErysdren, and KEX engine implementation based on code from Kaiser.
+GZDoom implementation based on code from Molecicco, and KEX engine implementation based on code from Kaiser.
 Thanks to proydoha & IDDQD1337 for updating the GZDoom code!
 
 Twitter: https://twitter.com/immorpher64
